@@ -1,97 +1,83 @@
-const API_BASE = ""; // same origin (Render / localhost)
+const API_BASE = "https://student-notes-zukx.onrender.com";
 
-// ============================
-// AUTH TOKEN
-// ============================
-const token = localStorage.getItem("token");
-if (!token) {
-  alert("Please login first");
-  window.location.href = "/login.html";
-}
-
-// ============================
-// UPLOAD NOTE
-// ============================
-document.getElementById("uploadForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const fileInput = document.getElementById("noteFile");
+/* ================= UPLOAD PDF ================= */
+async function uploadPDF() {
+  const fileInput = document.getElementById("pdfInput");
   const file = fileInput.files[0];
 
   if (!file) {
-    alert("Please select a PDF file");
+    alert("Please choose a file");
     return;
   }
 
   const formData = new FormData();
-  formData.append("note", file);
+  formData.append("file", file); // 🔴 MUST BE "file"
 
   try {
     const res = await fetch(`${API_BASE}/notes/upload`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
       body: formData,
     });
 
-    const data = await res.json();
-
     if (!res.ok) {
-      alert(data.message || "Upload failed");
-      return;
+      throw new Error("Upload failed");
     }
 
-    alert("Note uploaded successfully ✅");
+    alert("File uploaded successfully");
     fileInput.value = "";
     loadNotes();
-
   } catch (err) {
+    alert("Server error during upload");
     console.error(err);
-    alert("Server error while uploading");
   }
-});
+}
 
-// ============================
-// LOAD NOTES
-// ============================
+/* ================= LOAD NOTES ================= */
 async function loadNotes() {
   try {
     const res = await fetch(`${API_BASE}/notes`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
     });
 
     const notes = await res.json();
-
-    const list = document.getElementById("notesList");
-    list.innerHTML = "";
-
-    if (notes.length === 0) {
-      list.innerHTML = "<p>No notes uploaded yet</p>";
-      return;
-    }
+    const notesList = document.getElementById("notesList");
+    notesList.innerHTML = "";
 
     notes.forEach((note) => {
       const div = document.createElement("div");
-      div.className = "note-item";
+      div.className = "note-card";
 
       div.innerHTML = `
-        <p><strong>${note.originalName}</strong></p>
-        <a href="${note.fileUrl}" target="_blank">Open PDF</a>
+        <p>${note.originalName}</p>
+        <a href="${note.fileUrl}" target="_blank">Open</a>
+        <button onclick="deleteNote('${note._id}')">Delete</button>
       `;
 
-      list.appendChild(div);
+      notesList.appendChild(div);
     });
-
   } catch (err) {
     console.error(err);
-    alert("Failed to load notes");
   }
 }
 
-// ============================
-// LOAD NOTES ON PAGE LOAD
-// ============================
-loadNotes();
+/* ================= DELETE NOTE ================= */
+async function deleteNote(id) {
+  if (!confirm("Delete this note?")) return;
+
+  await fetch(`${API_BASE}/notes/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  });
+
+  loadNotes();
+}
+
+/* ================= AUTO LOAD ================= */
+document.addEventListener("DOMContentLoaded", loadNotes);
