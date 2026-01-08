@@ -1,117 +1,108 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
 
 const Note = require("../models/Note");
-const auth = require("../middleware/authMiddleware");
+const authMiddleware = require("../middleware/authMiddleware");
 
-// ===============================
-// MULTER STORAGE
-// ===============================
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+
+/* =========================
+   CLOUDINARY CONFIG
+========================= */
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+/* =========================
+   MULTER + CLOUDINARY STORAGE
+   IMPORTANT: resource_type: "raw"
+========================= */
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "student-notes",
+    resource_type: "raw", // REQUIRED for PDFs, PPT, DOC
+    allowed_formats: ["pdf", "ppt", "pptx", "doc", "docx"],
   },
-  filename: (req, file, cb) => {
-    const uniqueName = Date.now() + path.extname(file.originalname);
-    cb(null, uniqueName);
-  }
 });
 
-// ===============================
-// ALLOWED DOCUMENT TYPES
-// ===============================
-const allowedTypes = [
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.ms-powerpoint",
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-  "text/plain",
-  "application/vnd.ms-excel",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-];
+const upload = multer({ storage });
 
-// ===============================
-// MULTER CONFIG
-// ===============================
-const upload = multer({
-  storage,
-  fileFilter: (req, file, cb) => {
-    if (!allowedTypes.includes(file.mimetype)) {
-      return cb(new Error("Unsupported file type"), false);
+/* =========================
+   UPLOAD NOTE
+========================= */
+router.post(
+  "/upload",
+  authMiddleware,
+  upload.single("file"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const note = new Note({
+        filename: req.file.filename,              // Cloudinary filename
+        originalName: req.file.originalname,      // Original file name
+        fileUrl: req.file.path,                   // ✅ Cloudinary URL
+        userId: req.user.id,
+      });
+
+      await note.save();
+
+      res.status(201).json(note);
+    } catch (error) {
+      console.error("Upload error:", error);
+      res.status(500).json({ message: "Server error during upload" });
     }
-    cb(null, true);
   }
-});
+);
 
-// ===============================
-// GET ALL NOTES (PUBLIC)
-// ===============================
-router.get("/all", async (req, res) => {
+/* =========================
+   GET ALL NOTES (USER)
+========================= */
+router.get("/", authMiddleware, async (req, res) => {
   try {
-    const notes = await Note.find()
-      .populate("userId", "name email")
-      .sort({ uploadDate: -1 });
-
-    res.json(notes);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to fetch notes" });
-  }
-});
-
-// ===============================
-// UPLOAD NOTE (PROTECTED)
-// ===============================
-router.post("/upload", auth, upload.single("note"), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded" });
-    }
-
-    const note = new Note({
-      filename: req.file.filename,
-      originalName: req.file.originalname,
-      userId: req.user.id
+    const notes = await Note.find({ userId: req.user.id }).sort({
+      uploadDate: -1,
     });
-
-    await note.save();
-    res.status(201).json({ message: "File uploaded successfully" });
-
-  } catch (err) {
-    res.status(500).json({ message: "Upload failed" });
+    res.json(notes);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-// ===============================
-// DELETE NOTE (OWNER ONLY)
-// ===============================
-router.delete("/:id", auth, async (req, res) => {
+/* =========================
+   DELETE NOTE
+========================= */
+router.delete("/:id", authMiddleware, async (req, res) => {
   try {
-    const note = await Note.findById(req.params.id);
+    const note = await Note.findOne({
+      _id: req.params.id,
+      userId: req.user.id,
+    });
 
     if (!note) {
       return res.status(404).json({ message: "Note not found" });
     }
 
-    // OWNER CHECK
-    if (note.userId.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Not authorized" });
-    }
-
-    // DELETE FILE FROM UPLOADS
-    const filePath = path.join("uploads", note.filename);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    // Delete from Cloudinary
+    if (note.filename) {
+      await cloudinary.uploader.destroy(note.filename, {
+        resource_type: "raw",
+      });
     }
 
     await note.deleteOne();
-    res.json({ message: "Note deleted successfully" });
 
-  } catch (err) {
-    res.status(500).json({ message: "Delete failed" });
+    res.json({ message: "Note deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

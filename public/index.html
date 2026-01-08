@@ -78,7 +78,6 @@
       transform: translateX(4px);
     }
 
-    /* SECTION TITLE */
     .section-title {
       margin-top: 24px;
       margin-bottom: 10px;
@@ -125,11 +124,6 @@
       border-radius: 8px;
       cursor: pointer;
       font-weight: 600;
-      transition: transform 0.2s;
-    }
-
-    .sidebar button:hover {
-      transform: scale(1.05);
     }
 
     /* MAIN */
@@ -143,7 +137,6 @@
       display: flex;
       gap: 20px;
       margin-bottom: 20px;
-      flex-wrap: wrap;
     }
 
     .stat-card {
@@ -152,30 +145,6 @@
       border-radius: 14px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.08);
       min-width: 160px;
-    }
-
-    body.dark .stat-card {
-      background: #020617;
-    }
-
-    .top-bar {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-
-    input, select {
-      padding: 8px 10px;
-      border-radius: 8px;
-      border: 1px solid #cbd5f5;
-    }
-
-    body.dark input,
-    body.dark select {
-      background: #020617;
-      color: white;
-      border: 1px solid #334155;
     }
 
     .upload-panel {
@@ -187,10 +156,6 @@
       gap: 12px;
       margin-bottom: 30px;
       flex-wrap: wrap;
-    }
-
-    body.dark .upload-panel {
-      background: #020617;
     }
 
     .upload-panel button {
@@ -213,15 +178,6 @@
       padding: 16px;
       border-radius: 14px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-      transition: transform 0.2s;
-    }
-
-    body.dark .note-card {
-      background: #020617;
-    }
-
-    .note-card:hover {
-      transform: translateY(-4px);
     }
 
     .note-card a {
@@ -229,24 +185,7 @@
       color: #2563eb;
       text-decoration: none;
     }
-
-    .note-card small {
-      display: block;
-      margin: 6px 0 10px;
-      color: #64748b;
-    }
-
-    .delete-btn {
-      background: #ef4444;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 13px;
-    }
   </style>
-  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -263,7 +202,6 @@
       </div>
     </div>
 
-    <!-- STUDENT SECTION -->
     <div class="sidebar-bottom">
       <div class="section-title">Student</div>
       <div class="divider"></div>
@@ -295,22 +233,18 @@
       </div>
     </div>
 
-    <div class="top-bar">
-      <input type="text" id="searchInput" placeholder="Search notes...">
-      <select id="sortSelect">
-        <option value="latest">Latest</option>
-        <option value="name">Name</option>
-      </select>
-    </div>
-
-    <div class="upload-panel">
+    <!-- ✅ FIXED UPLOAD FORM -->
+    <form id="uploadForm" class="upload-panel">
       <input
-  type="file"
-  id="fileInput"
-  accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.xls,.xlsx">
-      <button onclick="uploadNote()">Upload PDF</button>
-    </div>
+        type="file"
+        id="noteFile"
+        accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.xls,.xlsx"
+        required
+      />
+      <button type="submit">Upload File</button>
+    </form>
 
+    <!-- NOTES -->
     <div class="notes-grid" id="notesList"></div>
 
   </div>
