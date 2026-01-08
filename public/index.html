@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>NoteNest</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      background: #f1f5f9;
+      color: #0f172a;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    body.dark {
+      background: #020617;
+      color: #e5e7eb;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 240px;
+      background: linear-gradient(180deg, #1e3a8a, #2563eb);
+      color: white;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: width 0.3s ease;
+    }
+
+    .sidebar.collapsed {
+      width: 72px;
+    }
+
+    .sidebar.collapsed .text,
+    .sidebar.collapsed .user-info,
+    .sidebar.collapsed .nav-item span,
+    .sidebar.collapsed .section-title {
+      display: none;
+    }
+
+    .toggle-btn {
+      cursor: pointer;
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+
+    .nav {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .nav-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s, transform 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-item:hover {
+      background: rgba(255,255,255,0.15);
+      transform: translateX(4px);
+    }
+
+    /* SECTION TITLE */
+    .section-title {
+      margin-top: 24px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      opacity: 0.85;
+      text-transform: uppercase;
+    }
+
+    .divider {
+      height: 1px;
+      background: rgba(255,255,255,0.25);
+      margin: 12px 0;
+    }
+
+    .sidebar-bottom {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .user-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .sidebar button {
+      background: white;
+      color: #1e3a8a;
+      border: none;
+      padding: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 0.2s;
+    }
+
+    .sidebar button:hover {
+      transform: scale(1.05);
+    }
+
+    /* MAIN */
+    .main {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto;
+    }
+
+    .stats {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 16px;
+      border-radius: 14px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      min-width: 160px;
+    }
+
+    body.dark .stat-card {
+      background: #020617;
+    }
+
+    .top-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    input, select {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #cbd5f5;
+    }
+
+    body.dark input,
+    body.dark select {
+      background: #020617;
+      color: white;
+      border: 1px solid #334155;
+    }
+
+    .upload-panel {
+      background: white;
+      padding: 18px;
+      border-radius: 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      display: flex;
+      gap: 12px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    body.dark .upload-panel {
+      background: #020617;
+    }
+
+    .upload-panel button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .notes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+    }
+
+    .note-card {
+      background: white;
+      padding: 16px;
+      border-radius: 14px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      transition: transform 0.2s;
+    }
+
+    body.dark .note-card {
+      background: #020617;
+    }
+
+    .note-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .note-card a {
+      font-weight: 600;
+      color: #2563eb;
+      text-decoration: none;
+    }
+
+    .note-card small {
+      display: block;
+      margin: 6px 0 10px;
+      color: #64748b;
+    }
+
+    .delete-btn {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+  </style>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div>
+      <div class="toggle-btn" onclick="toggleSidebar()">☰</div>
+      <h2>🪺 <span class="text">NoteNest</span></h2>
+
+      <div class="nav">
+        <div class="nav-item">📄 <span>All Notes</span></div>
+        <div class="nav-item">⭐ <span>My Uploads</span></div>
+      </div>
+    </div>
+
+    <!-- STUDENT SECTION -->
+    <div class="sidebar-bottom">
+      <div class="section-title">Student</div>
+      <div class="divider"></div>
+
+      <div class="user-box">
+        <div class="avatar">👤</div>
+        <div class="user-info">
+          <span id="userName"></span><br>
+          <small id="userEmail"></small>
+        </div>
+      </div>
+
+      <button onclick="toggleDarkMode()">🌙 Theme</button>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <div class="stats">
+      <div class="stat-card">
+        <strong>Total Notes</strong>
+        <div id="totalNotes">0</div>
+      </div>
+      <div class="stat-card">
+        <strong>Your Uploads</strong>
+        <div id="myNotes">0</div>
+      </div>
+    </div>
+
+    <div class="top-bar">
+      <input type="text" id="searchInput" placeholder="Search notes...">
+      <select id="sortSelect">
+        <option value="latest">Latest</option>
+        <option value="name">Name</option>
+      </select>
+    </div>
+
+    <div class="upload-panel">
+      <input
+  type="file"
+  id="fileInput"
+  accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.xls,.xlsx">
+      <button onclick="uploadNote()">Upload PDF</button>
+    </div>
+
+    <div class="notes-grid" id="notesList"></div>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
