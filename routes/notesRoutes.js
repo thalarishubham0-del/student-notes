@@ -1,129 +1,65 @@
-/* ======================================================
-   GLOBAL HELPERS
-====================================================== */
+const express = require("express");
+const router = express.Router();
+const multer = require("multer");
+const cloudinary = require("cloudinary").v2;
+const streamifier = require("streamifier");
+const Note = require("../models/Note");
+const auth = require("../middleware/auth");
 
-const API_BASE = "https://student-notes-zukx.onrender.com";
-
-/* ======================================================
-   AUTH HELPERS
-====================================================== */
-
-function getToken() {
-  return localStorage.getItem("token");
-}
-
-function requireAuth() {
-  const token = getToken();
-  if (!token) {
-    alert("Please login first");
-    window.location.href = "/login.html";
-    return null;
-  }
-  return token;
-}
-
-/* ======================================================
-   LOAD NOTES (SAFE)
-====================================================== */
-
-async function loadNotes() {
-  const notesList = document.getElementById("notesList");
-  if (!notesList) return; // 🚫 page doesn't have notes
-
-  const token = getToken();
-  if (!token) return;
-
-  try {
-    const res = await fetch(`${API_BASE}/notes`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!res.ok) throw new Error("Failed to fetch notes");
-
-    const data = await res.json();
-    const notes = Array.isArray(data) ? data : data.notes;
-
-    notesList.innerHTML = "";
-
-    if (!Array.isArray(notes) || notes.length === 0) {
-      notesList.innerHTML = "<p>No notes uploaded yet</p>";
-      return;
-    }
-
-    notes.forEach((note) => {
-      const div = document.createElement("div");
-      div.className = "note-card";
-
-      div.innerHTML = `
-        <p>${note.originalName}</p>
-        <a href="${note.fileUrl}" target="_blank">Open</a>
-      `;
-
-      notesList.appendChild(div);
-    });
-  } catch (err) {
-    console.error("Load notes error:", err);
-  }
-}
-
-/* ======================================================
-   UPLOAD HANDLER (100% SAFE)
-====================================================== */
-
-document.addEventListener("DOMContentLoaded", () => {
-  const uploadForm = document.getElementById("uploadForm");
-  const fileInput = document.getElementById("noteFile");
-
-  // 🚫 Not dashboard page
-  if (!uploadForm || !fileInput) {
-    console.log("ℹ️ Upload form not found on this page");
-    return;
-  }
-
-  uploadForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    console.log("🚀 Upload clicked");
-
-    const file = fileInput.files[0];
-    if (!file) {
-      alert("Please choose a file");
-      return;
-    }
-
-    const token = requireAuth();
-    if (!token) return;
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const res = await fetch(`${API_BASE}/notes/upload`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(errText);
-      }
-
-      alert("✅ Upload successful");
-      fileInput.value = "";
-      loadNotes();
-    } catch (err) {
-      console.error("Upload error:", err);
-      alert("❌ Upload failed");
-    }
-  });
+// Multer memory storage
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
-/* ======================================================
-   AUTO LOAD NOTES (SAFE)
-====================================================== */
+// Upload note
+router.post("/upload", auth, upload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
 
-document.addEventListener("DOMContentLoaded", loadNotes);
+    const streamUpload = () =>
+      new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            resource_type: "raw",
+            folder: "notes",
+          },
+          (error, result) => {
+            if (result) resolve(result);
+            else reject(error);
+          }
+        );
+
+        streamifier.createReadStream(req.file.buffer).pipe(stream);
+      });
+
+    const result = await streamUpload();
+
+    const note = new Note({
+      filename: req.file.originalname,
+      url: result.secure_url,
+      uploadedBy: req.user.id,
+    });
+
+    await note.save();
+
+    res.json(note);
+  } catch (err) {
+    console.error("Upload error:", err);
+    res.status(500).json({ error: "Upload failed" });
+  }
+});
+
+// Get notes
+router.get("/", auth, async (req, res) => {
+  try {
+    const notes = await Note.find().sort({ createdAt: -1 });
+    res.json(notes);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch notes" });
+  }
+});
+
+module.exports = router;
