@@ -1,65 +1,52 @@
 const express = require("express");
-const router = express.Router();
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
-const streamifier = require("streamifier");
 const Note = require("../models/Note");
-const auth = require("../middleware/auth");
 
-// Multer memory storage
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+const router = express.Router();
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Upload note
-router.post("/upload", auth, upload.single("file"), async (req, res) => {
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+router.post("/upload", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const streamUpload = () =>
-      new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          {
-            resource_type: "raw",
-            folder: "notes",
-          },
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          { resource_type: "raw" },
           (error, result) => {
-            if (result) resolve(result);
-            else reject(error);
+            if (error) reject(error);
+            else resolve(result);
           }
-        );
-
-        streamifier.createReadStream(req.file.buffer).pipe(stream);
-      });
-
-    const result = await streamUpload();
-
-    const note = new Note({
-      filename: req.file.originalname,
-      url: result.secure_url,
-      uploadedBy: req.user.id,
+        )
+        .end(req.file.buffer);
     });
 
-    await note.save();
+    const note = await Note.create({
+      filename: req.file.originalname,
+      url: result.secure_url
+    });
 
     res.json(note);
   } catch (err) {
-    console.error("Upload error:", err);
+    console.error(err);
     res.status(500).json({ error: "Upload failed" });
   }
 });
 
-// Get notes
-router.get("/", auth, async (req, res) => {
-  try {
-    const notes = await Note.find().sort({ createdAt: -1 });
-    res.json(notes);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch notes" });
-  }
+router.get("/", async (req, res) => {
+  const notes = await Note.find().sort({ uploadedAt: -1 });
+  res.json(notes);
 });
 
 module.exports = router;
