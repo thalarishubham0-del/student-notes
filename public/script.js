@@ -1,89 +1,129 @@
-/* ================= TOKEN ================= */
-const token = localStorage.getItem("token");
-if (!token) {
-  window.location.href = "login.html";
+/* ======================================================
+   GLOBAL HELPERS
+====================================================== */
+
+const API_BASE = "https://student-notes-zukx.onrender.com";
+
+/* ======================================================
+   AUTH HELPERS
+====================================================== */
+
+function getToken() {
+  return localStorage.getItem("token");
 }
 
-/* ================= LOAD NOTES ================= */
+function requireAuth() {
+  const token = getToken();
+  if (!token) {
+    alert("Please login first");
+    window.location.href = "/login.html";
+    return null;
+  }
+  return token;
+}
+
+/* ======================================================
+   LOAD NOTES (SAFE)
+====================================================== */
+
 async function loadNotes() {
+  const notesList = document.getElementById("notesList");
+  if (!notesList) return; // 🚫 page doesn't have notes
+
+  const token = getToken();
+  if (!token) return;
+
   try {
-    const res = await fetch("/notes", {
+    const res = await fetch(`${API_BASE}/notes`, {
       headers: {
-        Authorization: `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
 
-    const notes = await res.json();
-    const container = document.getElementById("notesList");
-    container.innerHTML = "";
+    if (!res.ok) throw new Error("Failed to fetch notes");
 
-    if (!Array.isArray(notes)) return;
+    const data = await res.json();
+    const notes = Array.isArray(data) ? data : data.notes;
 
-    notes.forEach(note => {
+    notesList.innerHTML = "";
+
+    if (!Array.isArray(notes) || notes.length === 0) {
+      notesList.innerHTML = "<p>No notes uploaded yet</p>";
+      return;
+    }
+
+    notes.forEach((note) => {
       const div = document.createElement("div");
-      div.className = "note";
+      div.className = "note-card";
 
       div.innerHTML = `
-        <p>${note.filename}</p>
+        <p>${note.originalName}</p>
         <a href="${note.fileUrl}" target="_blank">Open</a>
-        <button onclick="deleteNote('${note._id}')">Delete</button>
       `;
 
-      container.appendChild(div);
+      notesList.appendChild(div);
     });
-
   } catch (err) {
-    console.error(err);
+    console.error("Load notes error:", err);
   }
 }
 
-/* ================= DELETE ================= */
-async function deleteNote(id) {
-  if (!confirm("Delete this file?")) return;
+/* ======================================================
+   UPLOAD HANDLER (100% SAFE)
+====================================================== */
 
-  await fetch(`/notes/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
+document.addEventListener("DOMContentLoaded", () => {
+  const uploadForm = document.getElementById("uploadForm");
+  const fileInput = document.getElementById("noteFile");
 
-  loadNotes();
-}
-
-/* ================= UPLOAD ================= */
-document.getElementById("uploadForm").addEventListener("submit", async (e) => {
-  e.preventDefault(); // 🚨 THIS WAS YOUR BIGGEST BUG
-
-  const fileInput = document.getElementById("fileInput");
-  if (!fileInput.files.length) {
-    alert("Select a file");
+  // 🚫 Not dashboard page
+  if (!uploadForm || !fileInput) {
+    console.log("ℹ️ Upload form not found on this page");
     return;
   }
 
-  const formData = new FormData();
-  formData.append("file", fileInput.files[0]);
+  uploadForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    console.log("🚀 Upload clicked");
 
-  try {
-    const res = await fetch("/notes/upload", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
-      body: formData
-    });
+    const file = fileInput.files[0];
+    if (!file) {
+      alert("Please choose a file");
+      return;
+    }
 
-    if (!res.ok) throw new Error("Upload failed");
+    const token = requireAuth();
+    if (!token) return;
 
-    fileInput.value = "";
-    loadNotes();
-    alert("Uploaded successfully ✅");
+    const formData = new FormData();
+    formData.append("file", file);
 
-  } catch (err) {
-    console.error(err);
-    alert("Upload error ❌");
-  }
+    try {
+      const res = await fetch(`${API_BASE}/notes/upload`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText);
+      }
+
+      alert("✅ Upload successful");
+      fileInput.value = "";
+      loadNotes();
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert("❌ Upload failed");
+    }
+  });
 });
 
-/* ================= AUTO LOAD ================= */
+/* ======================================================
+   AUTO LOAD NOTES (SAFE)
+====================================================== */
+
 document.addEventListener("DOMContentLoaded", loadNotes);
