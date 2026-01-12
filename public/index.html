@@ -1,17 +1,42 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
   <title>NoteNest</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="logo">📘 NoteNest</div>
 
-<form id="uploadForm">
-  <input type="file" id="noteFile" required />
-  <button type="submit">Upload File</button>
-</form>
+    <div class="user-actions">
+      <span id="username">User</span>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </header>
 
-<div id="notesList"></div>
+  <!-- DASHBOARD -->
+  <main class="dashboard">
 
-<script src="script.js"></script>
+    <!-- UPLOAD CARD -->
+    <div class="card upload-card">
+      <h2>Upload Notes</h2>
+      <form id="uploadForm">
+        <input type="file" id="noteFile" name="file" required />
+        <button type="submit">Upload File</button>
+      </form>
+    </div>
+
+    <!-- NOTES -->
+    <section>
+      <h2 class="section-title">Your Notes</h2>
+      <div class="notes-grid" id="notesList"></div>
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>
 </body>
+
 </html>

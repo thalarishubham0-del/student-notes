@@ -1,198 +1,276 @@
-/* ===============================
-   GLOBAL
-================================ */
 * {
   box-sizing: border-box;
-  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", sans-serif;
 }
 
 body {
-  margin: 0;
-  background: #f1f5f9; /* soft app background */
-  color: #0f172a;
+  background: #0f172a;
+  color: #e5e7eb;
 }
 
-/* ===============================
-   LAYOUT
-================================ */
+/* Layout */
 .app {
   display: flex;
   min-height: 100vh;
 }
 
-/* ===============================
-   SIDEBAR
-================================ */
-#sidebar {
-  width: 260px;
-  background: linear-gradient(180deg, #1e3a8a, #2563eb);
-  color: white;
+/* Sidebar */
+.sidebar {
+  width: 240px;
+  background: #020617;
   padding: 20px;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
 }
 
-#sidebar.collapsed {
-  width: 70px;
+.profile {
+  text-align: center;
 }
 
-#sidebar h2 {
-  margin: 0 0 20px;
+.avatar {
+  font-size: 48px;
+  margin-bottom: 10px;
 }
 
-.sidebar-section {
-  margin-top: 20px;
-}
-
-.sidebar-section small {
-  opacity: 0.8;
-}
-
-.sidebar-btn {
-  margin-top: 10px;
-  padding: 10px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.15);
+.logout-btn {
+  background: #dc2626;
   border: none;
+  padding: 12px;
   color: white;
+  border-radius: 8px;
   cursor: pointer;
 }
 
-/* ===============================
-   MAIN CONTENT
-================================ */
-.main-content {
-  flex: 1;
-  padding: 24px 32px;
-  min-height: 100vh;
+.logout-btn:hover {
+  background: #b91c1c;
 }
 
-/* ===============================
-   STATS / TOP BAR
-================================ */
-.stats {
-  display: flex;
-  gap: 20px;
+/* Main */
+.content {
+  flex: 1;
+  padding: 30px;
+}
+
+.topbar h1 {
   margin-bottom: 20px;
 }
 
-.stat-box {
-  background: white;
-  padding: 16px 20px;
-  border-radius: 14px;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
-}
-
-.stat-box h3 {
-  margin: 0;
-}
-
-/* ===============================
-   UPLOAD BOX
-================================ */
+/* Upload box */
 .upload-box {
-  background: white;
+  background: #020617;
   padding: 20px;
-  border-radius: 16px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-  margin-bottom: 24px;
+  border-radius: 12px;
+  margin-bottom: 30px;
 }
 
-.upload-box input[type="file"] {
-  margin-right: 10px;
+.upload-box form {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .upload-box button {
   background: #2563eb;
-  color: white;
   border: none;
-  padding: 8px 16px;
+  color: white;
+  padding: 10px 16px;
   border-radius: 8px;
   cursor: pointer;
 }
 
-/* ===============================
-   SEARCH & SORT
-================================ */
-.controls {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.controls input,
-.controls select {
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid #cbd5f5;
-}
-
-/* ===============================
-   NOTES GRID
-================================ */
-#notesList {
+/* Notes grid */
+.notes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
+  margin-top: 15px;
 }
 
-/* ===============================
-   NOTE CARD
-================================ */
+/* Note card */
 .note-card {
-  background: white;
-  border-radius: 14px;
+  background: #020617;
+  padding: 15px;
+  border-radius: 12px;
+}
+
+.note-card p {
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.note-card a {
+  color: #60a5fa;
+  text-decoration: none;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .notes-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .sidebar {
+    display: none;
+  }
+
+  .notes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+/* NOTES GRID */
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 20px;
+}
+
+/* NOTE CARD */
+.note-card {
+  background: #1e293b;
   padding: 16px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .note-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 14px 28px rgba(0,0,0,0.12);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.note-card p {
+  color: #e5e7eb;
+  font-weight: 500;
+  margin-bottom: 10px;
+  word-break: break-word;
 }
 
 .note-card a {
-  font-weight: 600;
-  color: #1e40af;
+  color: #38bdf8;
   text-decoration: none;
+  font-weight: 500;
 }
 
-.note-card small {
-  display: block;
-  margin-top: 6px;
-  color: #64748b;
+.note-card a:hover {
+  text-decoration: underline;
+}
+/* RESET */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Inter", system-ui, sans-serif;
 }
 
-/* ===============================
-   DELETE BUTTON
-================================ */
-.delete-btn {
-  margin-top: 10px;
-  background: #dc2626;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-/* ===============================
-   DARK MODE
-================================ */
-body.dark {
-  background: #020617;
+body {
+  background: #0f172a;
   color: #e5e7eb;
 }
 
-body.dark .main-content,
-body.dark .upload-box,
-body.dark .note-card,
-body.dark .stat-box {
-  background: #0f172a;
-  color: white;
+/* TOP BAR */
+.topbar {
+  height: 64px;
+  background: #020617;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  border-bottom: 1px solid #1e293b;
 }
 
-body.dark .note-card a {
-  color: #93c5fd;
+.logo {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#logoutBtn {
+  background: #ef4444;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+}
+
+/* DASHBOARD */
+.dashboard {
+  padding: 32px;
+  max-width: 1200px;
+  margin: auto;
+}
+
+/* CARDS */
+.card {
+  background: #020617;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 32px;
+  border: 1px solid #1e293b;
+}
+
+.upload-card form {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+/* NOTES GRID */
+.section-title {
+  margin-bottom: 16px;
+}
+
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+/* NOTE CARD */
+.note-card {
+  background: #020617;
+  border: 1px solid #1e293b;
+  padding: 16px;
+  border-radius: 10px;
+}
+
+.note-card p {
+  margin-bottom: 10px;
+  font-size: 14px;
+  word-break: break-word;
+}
+
+.note-card a {
+  color: #38bdf8;
+  text-decoration: none;
+  font-weight: 500;
+}
+.note-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.delete-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.delete-btn:hover {
+  background: #c0392b;
 }
